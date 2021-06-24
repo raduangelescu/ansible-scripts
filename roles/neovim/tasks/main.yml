@@ -36,4 +36,7 @@
   file:
     path: /home/drakera/tmp-nvim
     state: absent
-  become_user: drakera
+
+- name: Install neovim plugins
+  command: nvim -c "PlugInstall" -c ":qa!"
+  register: nvim_install_plugins
