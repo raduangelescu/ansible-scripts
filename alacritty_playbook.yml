@@ -1,0 +1,13 @@
+- name: Setup Alacritty
+  hosts: local
+  become: yes
+  pre_tasks:
+    - name: Update repository index (Ubuntu)
+      tags: always
+      apt: 
+        update_cache: yes
+      changed_when: no
+  roles:
+    - role: alacritty
+    - role: tmux
+    - role: neovim

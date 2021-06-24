@@ -1,0 +1,18 @@
+- name: Add alacritty repo
+  apt_repository:
+    repo: 'ppa:aslatter/ppa'
+    state: present
+
+- name:  Install alacritty fonts and fish
+  apt:
+    name:
+      - alacritty
+      - fonts-monoid
+      - fish
+    state: latest
+        
+- name: Setup alacritty
+  copy:
+    src: 'alacritty.yml'
+    dest: /home/drakera/.config/alacritty/alacritty.yml
+  become_user: drakera

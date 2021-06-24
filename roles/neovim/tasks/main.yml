@@ -1,0 +1,40 @@
+- name: Install neovim dependencies
+  apt: 
+    name:
+      - gettext
+      - libtool
+      - libtool-bin
+      - autoconf
+      - automake
+      - cmake
+      - g++
+      - pkg-config 
+      - unzip
+      - build-essential
+      - nodejs
+    state: latest
+
+- name: Get neovim git
+  git:
+    repo: 'https://github.com/neovim/neovim'
+    dest: /home/drakera/tmp-nvim
+    key_file: /home/drakera/.ssh/id_ed25519
+    force: true
+  become_user: drakera
+
+- name: Build neovim
+  command: "make CMAKE_BUILD_TYPE=Release install"
+  args:
+    chdir: /home/drakera/tmp-nvim
+  become_user: drakera
+
+- name: Install neovim config
+  shell: "curl -sL https://raw.githubusercontent.com/ChristianChiarulli/lunarvim/master/utils/installer/install.sh | sudo bash -
+"
+  become_user: drakera
+
+- name: Delete tmp neovim
+  file:
+    path: /home/drakera/tmp-nvim
+    state: absent
+  become_user: drakera

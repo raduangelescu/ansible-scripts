@@ -1,0 +1,10 @@
+- name: Install tmux
+  apt:
+    name: tmux
+    state: latest
+  become_user: drakera
+- name: copy tmux config
+  copy:
+    src: "tmux.conf"
+    dest: "/home/drakera/.tmux.conf"
+  become_user: drakera
