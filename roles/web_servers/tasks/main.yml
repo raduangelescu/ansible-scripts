@@ -1,0 +1,14 @@
+- raw: apt-get install -y python-simplejson
+- name: ensure nginx package is removed
+  apt:
+    name: nginx
+    state: absent
+- name: install nginx
+  apt:
+    name: 
+      - nginx
+    state: latest
+- name: start nginx
+  service:
+    name: nginx
+    state: started

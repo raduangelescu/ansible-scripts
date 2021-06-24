@@ -1,0 +1,16 @@
+- name : install python package
+  apt: name=python3 update_cache=yes state=latest
+
+- name : install nginx plugin package
+  apt: name=python3-certbot-nginx state=latest
+
+- name : install let's encrypt package
+  apt: name={{ certbot_package }} update_cache=yes state=latest
+
+- name: create and install cert using {{ certbot_plugin }} plugin
+  command: "certbot --{{ certbot_plugin }} -d  {{ certbot_site_names[inventory_hostname_short] }} -m {{ certbot_mail_address }} --agree-tos --noninteractive --redirect"
+
+  
+- name: set letsencrypt cronjob for certificate auto renewal
+  cron: name=letsencrypt_renewal special_time=monthly job="/usr/bin/certbot renew"
+  when: ansible_facts['os_family'] == "Debian"

@@ -1,0 +1,210 @@
+- name: install laptop
+  hosts: laptopslinux
+  become: yes
+  vars:
+    web_root: "/var/www/html"
+    siteurl: "http://localhost"
+
+  pre_tasks:
+    - name: Update repository index (Ubuntu)
+      tags: always
+      apt: 
+        update_cache: yes
+      changed_when: no
+      when: ansible_distribution == "Ubuntu"
+
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+
+  tasks:
+    - name: Add alacritty repo
+      apt_repository:
+        repo: 'ppa:aslatter/ppa'
+        state: present
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+    - name: Add LibreOffice Repository
+      apt_repository:
+        repo: 'ppa:libreoffice/ppa'
+        state: present
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name=docker-ce state=latest
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+    - name: Install apt base packages
+      apt:
+        name: 
+          - pip
+          - python3-dev
+          - build-essential
+          - git-lfs
+          - git
+          - neofetch
+          - alacritty
+          - htop
+          - tmux
+          - neovim
+          - fzf
+          - cmus
+          - curl
+          - gcc
+          - clang
+          - golang
+          - ansible
+          - sshpass
+          - xclip
+          - texlive-full
+          - apt-transport-https
+          - ca-certificates
+          - gnupg 
+          - lsb-release
+          - software-properties-common
+          - sumatra
+          - timeshift
+          - openssh-server
+          - libreoffice
+          - calibre
+          - nginx
+        state: latest
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+    - name: "Add speedtest repo"
+      shell: "curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash"
+      changed_when: false
+
+    - name: Install speedtest
+      apt:
+        name: 
+          - speedtest
+
+    - name: install vscode
+      community.general.snap:
+        name: code
+        classic: yes
+
+    - name: Creates directory for dev
+      file:
+        path: /home/drakera/dev
+        state: directory
+      become_user: drakera
+    - name: Creates directory for dev/phd-thesis
+      file:
+        path: /home/drakera/dev/phd-thesis
+        state: directory
+      become_user: drakera
+    - name: Get phd-thesis git
+      git:
+        repo: 'git@github.com:raduangelescu/phd-thesis.git'
+        dest: /home/drakera/dev/phd-thesis
+        key_file: /home/drakera/.ssh/id_ed25519
+        force: true
+      become_user: drakera
+    - name: Creates directory for dev/articles
+      file:
+        path: /home/drakera/dev/articles
+        state: directory
+      become_user: drakera
+    - name: Get articles git
+      git:
+        repo: 'git@github.com:raduangelescu/articles.git'
+        dest: /home/drakera/dev/articles
+        key_file: /home/drakera/.ssh/id_ed25519
+        force: true
+      become_user: drakera
+    - name: Creates directory for dev/raduangelescu_site
+      file:
+        path: /home/drakera/dev/raduangelescu_site
+        state: directory
+      become_user: drakera
+    - name: "Rust | Install"
+      shell: "curl https://sh.rustup.rs -sSf | sh -s -- -y"
+      changed_when: false
+      become_user: drakera
+    - name: "Rust | Install toolchain"
+      shell: "{{ fubarhouse_user_dir }}/.cargo/bin/rustup toolchain install {{ rust_version }}"
+      register: rustup_toolchain
+      changed_when: '"installed" in rustup_toolchain.stdout'
+      become_user: drakera
+      when: rust_version is defined
+    - name: Get raduangelescu_site git
+      git:
+        repo: 'git@github.com:raduangelescu/raduangelescu-site.git'
+        dest: /home/drakera/dev/raduangelescu-site
+        key_file: /home/drakera/.ssh/id_ed25519
+        force: true
+      become_user: drakera
+    - name: ensure orange-penguin repo is up to date
+      git:
+        repo: 'git@github.com:raduangelescu/orangepenguin.git'
+        dest: "/home/drakera/dev/raduangelescu-site/src/pelican-themes/orange-penguin"
+        key_file: /home/drakera/.ssh/id_ed25519
+        force: true
+      become_user: drakera
+    - name: ensure pelican plugins repo is up to date
+      git:
+        repo: 'git@github.com:getpelican/pelican-plugins.git'
+        dest: "/home/drakera/dev/raduangelescu-site/src/pelican-plugins"
+        key_file: /home/drakera/.ssh/id_ed25519
+        force: true
+      become_user: drakera
+    - name: ensure pelican dynamic plugin is installed
+      git:
+        repo: 'git@github.com:wrobstory/pelican_dynamic.git'
+        dest: "/home/drakera/dev/raduangelescu-site/src/pelican-plugins/pelican_dynamic"
+        key_file: /home/drakera/.ssh/id_ed25519
+        force: true
+      become_user: drakera
+    - name: install pip packages in root python
+      pip:
+        name:
+        - pelican
+        - Markdown
+        - typogrify
+        - beautifulsoup4
+        - Pillow
+        - webassets
+        - git+https://github.com/disqus/disqus-python.git
+    - name: fetching pelican template
+      run_once: yes
+      fetch:
+        src: "/home/drakera/dev/raduangelescu-site/src/publishconf.py"
+        dest: "tmp/"
+        flat: yes
+      become_user: drakera
+    - name: set pelican variables
+      template:
+        src: "/mnt/e/ansible-playbooks/tmp/publishconf.py"
+        dest: "/home/drakera/dev/raduangelescu-site/src/publish.py"
+      become_user: drakera
+    - name: create pelican blog content
+      command: "pelican content -o {{web_root}} -s publish.py"
+      args:
+        chdir: "/home/drakera/dev/raduangelescu-site/src"
+    - name: copy files from extra folder for raduangelescu
+      copy:
+        src: "/home/drakera/dev/raduangelescu-site/src/extra/"
+        dest: "{{ web_root }}"
+        remote_src: yes
+        directory_mode: yes
+      notify: restart nginx
+    - name: copy bashrc
+      copy:
+        src: "bashrc"
+        dest: "/home/drakera/.bashrc"
+      become_user: drakera
+    - name: copy tmux config
+      copy:
+        src: "tmux.conf"
+        dest: "/home/drakera/.tmux.conf"
+      become_user: drakera
+        

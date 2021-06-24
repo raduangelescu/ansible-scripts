@@ -1,0 +1,31 @@
+- name: install mariadb server package (CentOS)
+  tags: centos,db, mariadb
+  dnf:
+    name: 
+      - mariadb
+      - python3-mysqldb
+      - default-libmysqlclient-dev
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+- name: install mariadb server (Ubuntu)
+  tags: db,mariadb,ubuntu
+  apt:
+    name: 
+      - mariadb-server
+      - python3-mysqldb
+      - default-libmysqlclient-dev
+    state: latest
+  when: ansible_distribution == "Ubuntu"
+
+- name: start mariadb server
+  service:
+    name: mariadb
+    enabled: true
+    state: started
+
+- name: add mariadb user
+  mysql_user:
+    name: "{db_user}"
+    password: "{db_password}"
+    state: present

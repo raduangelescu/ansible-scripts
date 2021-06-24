@@ -1,0 +1,30 @@
+
+- name: install pelican site
+  hosts: multi
+  become: yes
+  vars_files:
+    - pelican_vars.yml
+  vars:
+    siteurl: "http://linnode.raduangelescu.ovh"
+    pasarila_git: "/home/pasarila"
+  pre_tasks:
+    - name: update repository index (Ubuntu)
+      tags: always
+      apt: 
+        update_cache: yes
+      changed_when: no
+      when: ansible_distribution == "Ubuntu"
+  tasks:
+    - name: get pasarila repo
+      git:
+        repo: 'git@github.com:raduangelescu/pasarila.git'
+        dest: "{{raduangelescu_git}}"
+        key_file: /home/drakera/.ssh/id_ed25519
+
+    - name: Restore database ignoring errors
+      community.mysql.mysql_db:
+        name: my_db
+        state: import
+        target: /home/pasarila/exportdb30.sql
+        force: yes
+  

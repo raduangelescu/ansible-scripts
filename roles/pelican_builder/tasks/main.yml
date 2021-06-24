@@ -1,0 +1,84 @@
+- name: "create www directory {{web_root}}"
+  file:
+    path: "{{web_root}}"
+    state: directory
+    mode: '0775'
+- name: delete default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: restart nginx
+
+- name: copy nginx site.conf
+  template:
+    src: site.conf.j2
+    dest: /etc/nginx/sites-enabled/{{ domain }}
+    owner: drakera
+    group: drakera
+    mode: '0644'
+  notify: restart nginx
+
+- name: ensure pasarila repo is up to date
+  git:
+    repo: 'git@github.com:raduangelescu/pasarila.git'
+    dest: /home/pasarila
+    key_file: /home/drakera/.ssh/id_ed25519
+- name: delete webroot
+  file:
+    state: absent
+    path: "{{web_root}}"
+- name: delete raduangelescu git
+  file:
+    state: absent
+    path: "{{raduangelescu_git}}"
+- name: get raduangelescu repo
+  git:
+    repo: 'git@github.com:raduangelescu/raduangelescu-site.git'
+    dest: "{{raduangelescu_git}}"
+    key_file: /home/drakera/.ssh/id_ed25519
+- name: ensure orange-penguin repo is up to date
+  git:
+    repo: 'git@github.com:raduangelescu/orangepenguin.git'
+    dest: "{{raduangelescu_git}}/src/pelican-themes/orange-penguin"
+    key_file: /home/drakera/.ssh/id_ed25519
+- name: ensure pelican plugins repo is up to date
+  git:
+    repo: 'git@github.com:getpelican/pelican-plugins.git'
+    dest: "{{raduangelescu_git}}/src/pelican-plugins"
+    key_file: /home/drakera/.ssh/id_ed25519
+- name: ensure pelican dynamic plugin is installed
+  git:
+    repo: 'git@github.com:wrobstory/pelican_dynamic.git'
+    dest: "{{raduangelescu_git}}/src/pelican-plugins/pelican_dynamic"
+    key_file: /home/drakera/.ssh/id_ed25519
+- name: install pip packages in root python
+  pip:
+    name:
+    - pelican
+    - Markdown
+    - typogrify
+    - beautifulsoup4
+    - Pillow
+    - webassets
+    - git+https://github.com/disqus/disqus-python.git
+- name: fetching pelican template
+  run_once: yes
+  fetch:
+    src: "{{ raduangelescu_git }}/src/publishconf.py"
+    dest: "tmp/"
+    flat: yes
+- name: set pelican variables
+  template:
+    src: "/mnt/e/ansible-playbooks/tmp/publishconf.py"
+    dest: "{{ raduangelescu_git }}/src/publish.py"
+- name: create pelican blog content
+  command: "pelican content -o {{web_root}} -s publish.py"
+  args:
+    chdir: "{{ raduangelescu_git }}/src"
+- name: copy files from extra folder for raduangelescu
+  copy:
+    src: "{{ raduangelescu_git }}/src/extra/"
+    dest: "{{ web_root }}"
+    remote_src: yes
+    directory_mode: yes
+  notify: restart nginx

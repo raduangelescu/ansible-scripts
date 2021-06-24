@@ -1,0 +1,11 @@
+- name: install apt base packages
+  apt:
+    name: 
+      - pip
+      - python3-dev
+      - build-essential
+      - git-lfs
+      - libjpeg-dev
+      - zlib1g-dev
+      - python3-lxml
+    state: latest

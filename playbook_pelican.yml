@@ -1,0 +1,22 @@
+- name: install pelican site
+  hosts: multi
+  become: yes
+  vars_files:
+    - pelican_vars.yml
+  vars:
+    web_root: "/var/www/html"
+    siteurl: "http://linnode.raduangelescu.ovh"
+    raduangelescu_git: "/home/raduangelescu_git"
+  pre_tasks:
+    - name: update repository index (Ubuntu)
+      tags: always
+      apt: 
+        update_cache: yes
+      changed_when: no
+      when: ansible_distribution == "Ubuntu"
+  roles:
+    - role: web_servers
+    - role: pelican_builder
+    - role: letsencrypt
+
+  

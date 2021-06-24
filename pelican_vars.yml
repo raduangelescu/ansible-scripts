@@ -1,0 +1,14 @@
+domain: "linnode.raduangelescu.ovh"
+siteurl: "https://linnode.raduangelescu.ovh"
+web_root: "/var/www/linnode.raduangelescu.ovh"
+raduangelescu_git: "/home/raduangelescu_git"
+user: drakera
+
+certbot_site_names: {
+    linnode: "linnode.raduangelescu.ovh"
+ }
+ 
+certbot_package: "python3-certbot-apache"
+certbot_plugin: "nginx"
+certbot_mail_address: raduangelescu+certbot@gmail.com
+
