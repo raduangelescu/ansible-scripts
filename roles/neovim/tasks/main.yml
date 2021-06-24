@@ -26,8 +26,7 @@
   command: "make CMAKE_BUILD_TYPE=Release install"
   args:
     chdir: /home/drakera/tmp-nvim
-  become_user: drakera
-
+ 
 - name: Install neovim config
   shell: "curl -sL https://raw.githubusercontent.com/ChristianChiarulli/lunarvim/master/utils/installer/install.sh | sudo bash -
 "
