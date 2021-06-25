@@ -1,3 +1,19 @@
+- name: Install the gpg key for nodejs
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- name: Install the nodejs LTS repos
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_14.x focal main"
+    state: present
+    update_cache: yes
+
+- name: Install the nodejs
+  apt:
+    name: nodejs
+    state: present
+
 - name: Install neovim dependencies
   apt: 
     name:
@@ -12,8 +28,9 @@
       - unzip
       - build-essential
       - nodejs
+      - silversearcher-ag
     state: latest
-
+    
 - name: Get neovim git
   git:
     repo: 'https://github.com/neovim/neovim'
@@ -27,9 +44,20 @@
   args:
     chdir: /home/drakera/tmp-nvim
  
-- name: Install neovim config
-  shell: "curl -sL https://raw.githubusercontent.com/ChristianChiarulli/lunarvim/master/utils/installer/install.sh | sudo bash -
-"
+- name: Make NeoVIM config directory
+  file:
+    path: /home/drakera/.config/nvim
+    state: directory
+  become_user: drakera
+
+- name: Install NeoVIM plugin manager [plug]
+  shell: "curl -fLo /home/drakera/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+  become_user: drakera
+
+- name: Copy NeoVIM config
+  copy:
+    src: init.vim
+    dest: /home/drakera/.config/nvim/init.vim
   become_user: drakera
 
 - name: Delete tmp neovim
